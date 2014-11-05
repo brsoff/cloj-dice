@@ -49,15 +49,15 @@
 
 (defn user-turn [turn]
   (let [result (single-turn turn)]
-    (println (str "You rolled a " (apply str result) ". choose one or more of these, separated by commas."))
+    (println (str "You rolled a " (apply str result) ". Choose one or more of these, separated by commas."))
     (handle-user-choice (read-line) result)
-    (println (str "your current score is " (score-for :user) ". you have " (turn-for :user) " turns left."))))
+    (println (str "Your current score is " (score-for :user) ". You have " (turn-for :user) " turns left."))))
 
-(defn simulate-computer-turn []
-  (loop [x (turn-for :computer)]
-    (when (> x 0)
-      (choose-computer-score (single-turn x))
-      (recur (turn-for :computer)))))
+(defn simulate-computer-turn [remaining-turns]
+    (if (> remaining-turns 0)
+      (do
+        (choose-computer-score (single-turn remaining-turns))
+        (simulate-computer-turn (turn-for :computer)))))
 
 (defn user-input [input]
   (cond
@@ -71,19 +71,19 @@
       (println "You tied.")
       (if (< (score-for :user) (score-for :computer)) (println "You win!") (println "You lose!")))))
 
-(defn user-sequence []
-  (loop [turns-remaining (turn-for :user)]
-    (when (and (> turns-remaining 0) (= (game-status) "active") (<= (score-for :user) (score-for :computer)))
-       (println "Press 'r' to roll or 'q' to quit.")
-       (user-input (read-line))
-      (recur (turn-for :user))))
-  (determine-outcome))
+(defn user-sequence [remaining-turns]
+    (if (and (> remaining-turns 0) (= (game-status) "active") (<= (score-for :user) (score-for :computer)))
+      (do
+        (println "Press 'r' to roll or 'q' to quit.")
+        (user-input (read-line))
+        (user-sequence (turn-for :user)))
+      (determine-outcome)))
 
 (defn start-game []
-  (simulate-computer-turn)
+  (simulate-computer-turn (turn-for :computer))
   (println "Welcome to Dice. Please enter your name:")
   (def player-name (read-line))
   (println (str "Hello, " player-name ". The computer rolled a " (score-for :computer)))
-  (user-sequence))
+  (user-sequence (turn-for :user)))
 
 (defn -main [] (start-game))
